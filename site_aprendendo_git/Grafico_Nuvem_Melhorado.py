@@ -2,7 +2,7 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 import pandas as pd
 import numpy as np
-from scipy.optimize import curve_fit
+from scipy.interpolate import make_interp_spline
 
 # Dados fornecidos
 meta_2024 = {
@@ -22,18 +22,16 @@ resultados_19BPM = {
 
 df_resultados = pd.DataFrame(resultados_19BPM)
 
-# Função exponencial para ajuste
-def func_exp(x, a, b, c):
-    return a * np.exp(b * x) + c
-
-# Calcular a reta de tendência exponencial e os limites superior e inferior
+# Interpolação cúbica para suavizar a curva
 X = np.arange(1, len(df_meta) + 1)
-popt, pcov = curve_fit(func_exp, X, df_meta['IMV'], p0=(1, 0.1, 1))
-y_tendencia = func_exp(X, *popt)
+y = df_meta['IMV']
+X_smooth = np.linspace(X.min(), X.max(), 300)
+spl = make_interp_spline(X, y, k=3)
+y_smooth = spl(X_smooth)
 
-# Limites superior e inferior
-limite_superior = y_tendencia + 0.5
-limite_inferior = y_tendencia - 0.5
+# Limites superior e inferior baseados na interpolação cúbica
+limite_superior = y_smooth + 0.5
+limite_inferior = y_smooth - 0.5
 
 # Plotar os dados
 plt.figure(figsize=(14, 7))
@@ -43,15 +41,15 @@ sns.set(style="whitegrid")
 plt.scatter(X, df_meta['IMV'], color='blue', label='IMV Meta 2024')
 plt.scatter(np.arange(1, len(df_resultados) + 1), df_resultados['imv'], color='red', label='IMV 19 BPM 2024')
 
-# Plotar a reta de tendência
-plt.plot(X, y_tendencia, color='blue', linestyle='-', linewidth=2, label='Tendência Exponencial')
+# Plotar a curva suavizada
+plt.plot(X_smooth, y_smooth, color='blue', linestyle='-', linewidth=2, label='Curva Suavizada')
 
 # Plotar os limites superior e inferior
-plt.plot(X, limite_superior, color='gray', linestyle='--', linewidth=1)
-plt.plot(X, limite_inferior, color='gray', linestyle='--', linewidth=1)
+plt.plot(X_smooth, limite_superior, color='gray', linestyle='--', linewidth=1)
+plt.plot(X_smooth, limite_inferior, color='gray', linestyle='--', linewidth=1)
 
 # Preencher a área entre os limites
-plt.fill_between(X, limite_inferior, limite_superior, color='gray', alpha=0.8, label='Limite Superior/Inferior')
+plt.fill_between(X_smooth, limite_inferior, limite_superior, color='gray', alpha=0.8, label='Limite Superior/Inferior')
 
 # Adicionar rótulos e título
 plt.title('IMV e IPQ - Meta 2024 vs Resultados 19 BPM')
