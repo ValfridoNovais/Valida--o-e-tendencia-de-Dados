@@ -2,7 +2,7 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 import pandas as pd
 import numpy as np
-from sklearn.linear_model import LinearRegression
+from scipy.optimize import curve_fit
 
 # Dados fornecidos
 meta_2024 = {
@@ -22,17 +22,16 @@ resultados_19BPM = {
 
 df_resultados = pd.DataFrame(resultados_19BPM)
 
-# Função de regressão linear
-def regressao_linear(X, y):
-    X = np.array(X).reshape(-1, 1)
-    y = np.array(y)
-    reg = LinearRegression().fit(X, y)
-    return reg.predict(X), reg.coef_[0], reg.intercept_
+# Função exponencial para ajuste
+def func_exp(x, a, b, c):
+    return a * np.exp(b * x) + c
 
-# Calcular a reta de tendência e os limites superior e inferior
+# Calcular a reta de tendência exponencial e os limites superior e inferior
 X = np.arange(1, len(df_meta) + 1)
-y_tendencia, coef, intercept = regressao_linear(X, df_meta['IMV'])
+popt, pcov = curve_fit(func_exp, X, df_meta['IMV'], p0=(1, 0.1, 1))
+y_tendencia = func_exp(X, *popt)
 
+# Limites superior e inferior
 limite_superior = y_tendencia + 0.5
 limite_inferior = y_tendencia - 0.5
 
@@ -45,7 +44,7 @@ plt.scatter(X, df_meta['IMV'], color='blue', label='IMV Meta 2024')
 plt.scatter(np.arange(1, len(df_resultados) + 1), df_resultados['imv'], color='red', label='IMV 19 BPM 2024')
 
 # Plotar a reta de tendência
-plt.plot(X, y_tendencia, color='blue', linestyle='-', linewidth=2, label='Tendência')
+plt.plot(X, y_tendencia, color='blue', linestyle='-', linewidth=2, label='Tendência Exponencial')
 
 # Plotar os limites superior e inferior
 plt.plot(X, limite_superior, color='gray', linestyle='--', linewidth=1)
