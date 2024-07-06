@@ -2,6 +2,7 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 import pandas as pd
 import numpy as np
+from scipy.interpolate import make_interp_spline
 
 # Dados fornecidos
 meta_2024 = {
@@ -22,7 +23,7 @@ resultados_19BPM = {
 df_resultados = pd.DataFrame(resultados_19BPM)
 
 # Ajustar um polinômio cúbico aos dados
-X = np.arange(1, len(df_meta) + 1)
+X = df_meta['IPQ']
 y = df_meta['IMV']
 coefs = np.polyfit(X, y, 3)
 poly = np.poly1d(coefs)
@@ -42,8 +43,8 @@ plt.figure(figsize=(14, 7))
 sns.set(style="whitegrid")
 
 # Plotar os valores reais
-plt.scatter(X, df_meta['IMV'], color='blue', label='IMV Meta 2024')
-plt.scatter(np.arange(1, len(df_resultados) + 1), df_resultados['imv'], color='red', label='IMV 19 BPM 2024')
+plt.scatter(df_meta['IPQ'], df_meta['IMV'], color='blue', label='IMV Meta 2024')
+plt.scatter(df_resultados['ipq'], df_resultados['imv'], color='red', label='IMV 19 BPM 2024')
 
 # Plotar a curva ajustada
 plt.plot(X_smooth, y_smooth, color='blue', linestyle='-', linewidth=2, label='Curva Polinomial Cúbica')
@@ -56,15 +57,14 @@ plt.plot(X_smooth, limite_inferior, color='gray', linestyle='--', linewidth=1)
 plt.fill_between(X_smooth, limite_inferior, limite_superior, color='gray', alpha=0.8, label='Limite Superior/Inferior')
 
 # Adicionar rótulos e título
-plt.title('IMV e IPQ - Meta 2024 vs Resultados 19 BPM')
-plt.xlabel('Mês')
+plt.title('IMV vs IPQ - Meta 2024 vs Resultados 19 BPM')
+plt.xlabel('IPQ')
 plt.ylabel('IMV')
-plt.xticks(X, df_meta['MES 2024'])
 plt.legend()
 
 # Anotação dos valores reais
 for i in range(len(df_resultados)):
-    plt.text(i+1, df_resultados['imv'][i] + 0.1, f"{df_resultados['imv'][i]:.2f}", ha='center')
+    plt.text(df_resultados['ipq'][i], df_resultados['imv'][i] + 0.1, f"{df_resultados['imv'][i]:.2f}", ha='center')
 
 # Fonte e anotação
 plt.annotate('Fonte: CGA/DOP - Base BISP auditada. Extração com dados até 01/05/2024',
