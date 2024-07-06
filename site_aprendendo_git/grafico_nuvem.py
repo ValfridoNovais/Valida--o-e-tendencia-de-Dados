@@ -33,21 +33,22 @@ plt.title('Correlação: -0.29')
 plt.xlabel('IPQ')
 plt.ylabel('IMV')
 
-# Adicionar retângulos coloridos
-# Define as regiões para os retângulos
+# Adicionar retângulos coloridos estilo ninebox
 regions = [
-    (0, 200, -15, 15, 'red', 0.1),
-    (200, 500, -15, 15, 'green', 0.1),
-    (500, 700, -15, 15, 'blue', 0.1)
+    (0, 233, -5, 5, 'red', '4 (Baixo esforço)'),
+    (0, 233, 5, 15, 'orange', '1 (Enigma resultado)'),
+    (0, 233, -15, -5, 'red', '7 (Insuficiente)'),
+    (233, 466, -5, 5, 'yellow', '5 (Médio esforço e resultado)'),
+    (233, 466, 5, 15, 'green', '2 (Forte resultado)'),
+    (233, 466, -15, -5, 'red', '8 (Baixo Resultado)'),
+    (466, 700, -5, 5, 'green', '6 (Forte esforço)'),
+    (466, 700, 5, 15, 'green', '3 (Alto desempenho)'),
+    (466, 700, -15, -5, 'orange', '9 (Enigma esforço)')
 ]
 
-for x_min, x_max, y_min, y_max, color, alpha in regions:
-    plt.gca().add_patch(plt.Rectangle((x_min, y_min), x_max-x_min, y_max-y_min, edgecolor=color, facecolor=color, alpha=alpha, lw=2))
-
-# Adicionar texto para as regiões
-plt.text(100, 0, '34 CIA PM IND', fontsize=12, ha='center', color='black')
-plt.text(350, 0, '44 BPM', fontsize=12, ha='center', color='black')
-plt.text(600, 0, '70 BPM', fontsize=12, ha='center', color='black')
+for x_min, x_max, y_min, y_max, color, label in regions:
+    plt.gca().add_patch(plt.Rectangle((x_min, y_min), x_max-x_min, y_max-y_min, edgecolor=color, facecolor=color, alpha=0.1, lw=2))
+    plt.text((x_min + x_max) / 2, (y_min + y_max) / 2, label, fontsize=12, ha='center', color='black')
 
 # Ajustar legenda
 plt.legend(title='Excesso de crimes sobre a meta', bbox_to_anchor=(1.05, 1), loc='upper left')
