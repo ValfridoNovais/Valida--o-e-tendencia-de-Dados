@@ -2,7 +2,6 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 import pandas as pd
 import numpy as np
-from scipy.interpolate import make_interp_spline
 
 # Dados fornecidos
 meta_2024 = {
@@ -22,16 +21,21 @@ resultados_19BPM = {
 
 df_resultados = pd.DataFrame(resultados_19BPM)
 
-# Interpolação cúbica para suavizar a curva
+# Ajustar um polinômio cúbico aos dados
 X = np.arange(1, len(df_meta) + 1)
 y = df_meta['IMV']
+coefs = np.polyfit(X, y, 3)
+poly = np.poly1d(coefs)
 X_smooth = np.linspace(X.min(), X.max(), 300)
-spl = make_interp_spline(X, y, k=3)
-y_smooth = spl(X_smooth)
+y_smooth = poly(X_smooth)
 
-# Limites superior e inferior baseados na interpolação cúbica
-limite_superior = y_smooth + 0.5
-limite_inferior = y_smooth - 0.5
+# Calcular o desvio padrão dos resíduos
+residuos = y - poly(X)
+std_dev = np.std(residuos)
+
+# Limites superior e inferior baseados no desvio padrão
+limite_superior = y_smooth + std_dev
+limite_inferior = y_smooth - std_dev
 
 # Plotar os dados
 plt.figure(figsize=(14, 7))
@@ -41,8 +45,8 @@ sns.set(style="whitegrid")
 plt.scatter(X, df_meta['IMV'], color='blue', label='IMV Meta 2024')
 plt.scatter(np.arange(1, len(df_resultados) + 1), df_resultados['imv'], color='red', label='IMV 19 BPM 2024')
 
-# Plotar a curva suavizada
-plt.plot(X_smooth, y_smooth, color='blue', linestyle='-', linewidth=2, label='Curva Suavizada')
+# Plotar a curva ajustada
+plt.plot(X_smooth, y_smooth, color='blue', linestyle='-', linewidth=2, label='Curva Polinomial Cúbica')
 
 # Plotar os limites superior e inferior
 plt.plot(X_smooth, limite_superior, color='gray', linestyle='--', linewidth=1)
@@ -68,3 +72,6 @@ plt.annotate('Fonte: CGA/DOP - Base BISP auditada. Extração com dados até 01/
 
 # Exibir o gráfico
 plt.show()
+
+# Exibir a função gerada
+print(f"Função gerada: {poly}")
