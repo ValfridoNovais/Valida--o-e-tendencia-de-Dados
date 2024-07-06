@@ -22,6 +22,9 @@ resultados_19BPM = {
 
 df_resultados = pd.DataFrame(resultados_19BPM)
 
+# Calcular a correlação
+correlacao = df_meta['IMV'].corr(df_meta['IPQ'])
+
 # Ajustar um polinômio cúbico aos dados
 X = df_meta['IPQ']
 y = df_meta['IMV']
@@ -57,7 +60,7 @@ plt.plot(X_smooth, limite_inferior, color='gray', linestyle='--', linewidth=1)
 plt.fill_between(X_smooth, limite_inferior, limite_superior, color='gray', alpha=0.8, label='Limite Superior/Inferior')
 
 # Adicionar rótulos e título
-plt.title('IMV vs IPQ - Meta 2024 vs Resultados 19 BPM')
+plt.title(f'IMV vs IPQ - Meta 2024 vs Resultados 19 BPM (Correlação: {correlacao:.2f})')
 plt.xlabel('IPQ')
 plt.ylabel('IMV')
 plt.legend()
