@@ -8,7 +8,7 @@ data = {
     'ano/mês': pd.date_range(start='2022-01-01', periods=30, freq='MS'),
     'resultado': [
         0.87119, 0.58079, 0.58079, 0.87119, 1.45199, 1.45199, 0.87119, 1.74239, 0.87119, 0.87119, 0, 1.45199,
-        2.03279, 0.58079, 2.61358, 1.16159, 1.16159, 1.74239, 0.58079, 2.32318, 1.45199, 2.03279, 0.58079, 1.45199, 1.74239, 0.29040, 2.03279, 3.19, 3.78,3.19
+        2.03279, 0.58079, 2.61358, 1.16159, 1.16159, 1.74239, 0.58079, 2.32318, 1.45199, 2.03279, 0.58079, 1.45199, 1.74239, 0.29040, 2.03279, 3.19, 3.78, 3.19
     ]
 }
 
@@ -26,8 +26,15 @@ fit = model.fit()
 
 # Previsões para o futuro
 previsoes = fit.forecast(steps=20)
+# Calcular intervalo de confiança (assumindo distribuição normal dos erros)
+alpha = 0.05
+z = 1.96  # para um intervalo de confiança de 95%
+sigma = np.std(fit.resid, ddof=1)  # desvio padrão dos resíduos
+
 df_previsao = pd.DataFrame({
-    'previsão': previsoes
+    'previsão': previsoes,
+    'limite_superior': previsoes + z * sigma,
+    'limite_inferior': previsoes - z * sigma
 }, index=pd.date_range(start=df.index[-1] + pd.offsets.MonthEnd(1), periods=20, freq='MS'))
 
 # Adicionar metas ao DataFrame
@@ -35,7 +42,7 @@ df_meta = pd.DataFrame({
     'meta': metas_2024
 }, index=pd.date_range(start='2024-01-01', periods=12, freq='MS'))
 
-# Gráfico
+# Primeiro gráfico
 plt.figure(figsize=(14, 7))
 plt.plot(df.index, df['resultado'], label='Resultado Real', marker='o')
 for x, y in zip(df.index, df['resultado']):
@@ -50,6 +57,22 @@ for x, y in zip(df_meta.index, df_meta['meta']):
     plt.text(x, y, f'{y:.2f}', fontsize=9, ha='right')
 
 plt.title('Resultados e Previsões com Suavização Tripla Aditiva e Metas')
+plt.xlabel('')
+plt.ylabel('')
+plt.legend()
+plt.grid(True)
+plt.show()
+
+# Segundo gráfico com limites de previsão
+plt.figure(figsize=(14, 7))
+plt.plot(df.index, df['resultado'], label='Resultado Real', marker='o', color='blue')
+plt.plot(df_previsao.index, df_previsao['previsão'], label='Previsão', color='yellow', linestyle='--')
+plt.plot(df_previsao.index, df_previsao['limite_superior'], label='Limite Superior', color='red', linestyle='--')
+plt.plot(df_previsao.index, df_previsao['limite_inferior'], label='Limite Inferior', color='orange', linestyle='--')
+
+plt.fill_between(df_previsao.index, df_previsao['limite_superior'], df_previsao['limite_inferior'], color='grey', alpha=0.2)
+
+plt.title('Previsões com Limites de Confiança')
 plt.xlabel('')
 plt.ylabel('')
 plt.legend()
