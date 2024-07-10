@@ -2,7 +2,6 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 import pandas as pd
 import numpy as np
-from scipy.interpolate import make_interp_spline
 
 # Dados fornecidos
 meta_2024 = {
@@ -57,7 +56,7 @@ plt.plot(X_smooth, limite_superior, color='gray', linestyle='--', linewidth=1)
 plt.plot(X_smooth, limite_inferior, color='gray', linestyle='--', linewidth=1)
 
 # Preencher a área entre os limites
-plt.fill_between(X_smooth, limite_inferior, limite_superior, color='gray', alpha=0.8, label='Limite Superior/Inferior')
+plt.fill_between(X_smooth, limite_inferior, limite_superior, color='gray', alpha=0.2, label='Limite Superior/Inferior')
 
 # Adicionar rótulos e título
 plt.title(f'IMV vs IPQ - Meta 2024 vs Resultados 19 BPM (Correlação: {correlacao:.2f})')
@@ -65,9 +64,12 @@ plt.xlabel('IPQ')
 plt.ylabel('IMV')
 plt.legend()
 
-# Anotação dos valores reais
+# Anotação dos valores reais e metas
+for i in range(len(df_meta)):
+    plt.text(df_meta['IPQ'][i], df_meta['IMV'][i] + 0.1, f"{df_meta['MES 2024'][i].upper()}-2024\nIMV={df_meta['IMV'][i]:.2f}\nIPQ={df_meta['IPQ'][i]:.2f}", fontsize=9, ha='center')
+
 for i in range(len(df_resultados)):
-    plt.text(df_resultados['ipq'][i], df_resultados['imv'][i] + 0.1, f"{df_resultados['imv'][i]:.2f}", ha='center')
+    plt.text(df_resultados['ipq'][i], df_resultados['imv'][i] + 0.1, f"{df_resultados['mês'][i].upper()}\nIMV={df_resultados['imv'][i]:.2f}\nIPQ={df_resultados['ipq'][i]:.2f}", fontsize=9, ha='center')
 
 # Fonte e anotação
 plt.annotate('Fonte: CGA/DOP - Base BISP auditada. Extração com dados até 01/05/2024',
