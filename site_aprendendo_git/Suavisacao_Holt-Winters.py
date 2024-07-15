@@ -57,12 +57,10 @@ for x, y in zip(df_meta.index, df_meta['meta']):
     plt.text(x, y, f'{y:.2f}', fontsize=9, ha='right')
 
 # Adicionar a equação da linha de previsão
-params = fit.params
-equation_text = f'Previsão: Y = {params["smoothing_level"]:.5f}'
-if "smoothing_slope" in params:
-    equation_text += f' + {params["smoothing_slope"]:.5f}t'
-if "smoothing_seasonal" in params:
-    equation_text += f' + {params["smoothing_seasonal"]:.5f}S'
+level = fit.params['smoothing_level']
+slope = fit.params['smoothing_slope'] if 'smoothing_slope' in fit.params else 0
+season = fit.params['smoothing_seasonal'] if 'smoothing_seasonal' in fit.params else 0
+equation_text = f'Previsão: Y = {level:.5f} + {slope:.5f}t + {season:.5f}S'
 plt.text(0.05, 0.02, equation_text, transform=plt.gca().transAxes,
          fontsize=12, verticalalignment='bottom')
 
