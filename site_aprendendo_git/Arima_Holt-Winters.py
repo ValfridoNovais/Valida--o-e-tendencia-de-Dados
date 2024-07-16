@@ -1,11 +1,10 @@
-#Importação de Bibliotecas:
 import pandas as pd
 import numpy as np
 from statsmodels.tsa.holtwinters import ExponentialSmoothing
 from statsmodels.tsa.arima.model import ARIMA
+from scipy.stats import norm
 import matplotlib.pyplot as plt
 
-#Definição de Dados
 # Dados dos resultados mensais até Abril de 2024
 data = {
     'ano/mês': pd.date_range(start='2022-01-01', periods=30, freq='MS'),
@@ -23,22 +22,24 @@ df = pd.DataFrame(data)
 df.set_index('ano/mês', inplace=True)
 df.index.freq = 'MS'
 
-#Modelo de Holt-Winters:
 # Modelo de Suavização Exponencial Tripla com componentes aditivos
 model_hw = ExponentialSmoothing(df['resultado'], trend='add', seasonal='add', seasonal_periods=12)
 fit_hw = model_hw.fit()
 
 # Previsões para o futuro
 previsoes_hw = fit_hw.forecast(steps=20)
-# Calcular intervalo de confiança (assumindo distribuição normal dos erros)
-alpha = 0.05
-z = 1.96  # para um intervalo de confiança de 95%
-sigma = np.std(fit_hw.resid, ddof=1)  # desvio padrão dos resíduos
+
+# Defina o nível de confiança desejado (por exemplo, 99% de confiança)
+confidence_level = 0.99
+z = norm.ppf((1 + confidence_level) / 2)
+
+# Calcular intervalo de confiança para Holt-Winters
+sigma_hw = np.std(fit_hw.resid, ddof=1)  # desvio padrão dos resíduos
 
 df_previsao_hw = pd.DataFrame({
     'previsão': previsoes_hw,
-    'limite_superior': previsoes_hw + z * sigma,
-    'limite_inferior': previsoes_hw - z * sigma
+    'limite_superior': previsoes_hw + z * sigma_hw,
+    'limite_inferior': previsoes_hw - z * sigma_hw
 }, index=pd.date_range(start=df.index[-1] + pd.offsets.MonthEnd(1), periods=20, freq='MS'))
 
 # Adicionar metas ao DataFrame
@@ -46,17 +47,16 @@ df_meta = pd.DataFrame({
     'meta': metas_2024
 }, index=pd.date_range(start='2024-01-01', periods=12, freq='MS'))
 
-#Modelo Arima
 # Função para ajustar modelo ARIMA e prever
 def ajustar_modelo_arima(series):
-    model_arima = ARIMA(series, order=(6,1,0))
+    model_arima = ARIMA(series, order=(5,1,0))
     model_fit_arima = model_arima.fit()
     forecast_arima = model_fit_arima.forecast(steps=20)
     return forecast_arima, model_fit_arima
 
 previsoes_arima, fit_arima = ajustar_modelo_arima(df['resultado'])
 
-# Calcular intervalo de confiança para ARIMA (assumindo distribuição normal dos erros)
+# Calcular intervalo de confiança para ARIMA
 sigma_arima = np.std(fit_arima.resid, ddof=1)  # desvio padrão dos resíduos
 
 df_previsao_arima = pd.DataFrame({
@@ -65,7 +65,6 @@ df_previsao_arima = pd.DataFrame({
     'limite_inferior': previsoes_arima - z * sigma_arima
 }, index=pd.date_range(start=df.index[-1] + pd.offsets.MonthEnd(1), periods=20, freq='MS'))
 
-#graficos
 # Gráfico de Holt-Winters
 plt.figure(figsize=(14, 7))
 plt.plot(df.index, df['resultado'], label='Resultado Real', marker='o')
@@ -82,7 +81,7 @@ for x, y in zip(df_meta.index, df_meta['meta']):
 
 plt.fill_between(df_previsao_hw.index, df_previsao_hw['limite_superior'], df_previsao_hw['limite_inferior'], color='grey', alpha=0.2)
 
-plt.title('Resultados e Previsões com Suavização Tripla Aditiva e Metas')
+plt.title(f'Resultados e Previsões com Suavização Tripla Aditiva e Metas\n({int(confidence_level*100)}% Intervalo de Confiança)')
 plt.xlabel('')
 plt.ylabel('')
 plt.legend()
@@ -105,14 +104,13 @@ for x, y in zip(df_meta.index, df_meta['meta']):
 
 plt.fill_between(df_previsao_arima.index, df_previsao_arima['limite_superior'], df_previsao_arima['limite_inferior'], color='grey', alpha=0.2)
 
-plt.title('Previsões com ARIMA e Limites de Confiança')
+plt.title(f'Previsões com ARIMA e Limites de Confiança\n({int(confidence_level*100)}% Intervalo de Confiança)')
 plt.xlabel('')
 plt.ylabel('')
 plt.legend()
 plt.grid(True)
 plt.show()
 
-#Exportar Dados
 # Exportar para CSV
 df_complete_hw = pd.concat([df, df_previsao_hw], axis=0)
 df_complete_hw['meta'] = df_meta['meta']
