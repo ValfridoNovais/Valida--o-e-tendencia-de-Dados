@@ -38,7 +38,7 @@ fit_hw = model_hw.fit()
 previsoes_hw = fit_hw.forecast(steps=20)
 
 # Defina o nível de confiança desejado (por exemplo, 99% de confiança)
-confidence_level = 0.99
+confidence_level = 0.9
 z = norm.ppf((1 + confidence_level) / 2)
 
 # Calcular intervalo de confiança para Holt-Winters
@@ -73,21 +73,34 @@ df_previsao_arima = pd.DataFrame({
     'limite_inferior': previsoes_arima - z * sigma_arima
 }, index=pd.date_range(start=df.index[-1] + pd.offsets.MonthEnd(1), periods=20, freq='MS'))
 
+# Filtra apenas os dados de 2024 para plotagem
+df_2024 = df.loc['2024']
+df_previsao_hw_2024 = df_previsao_hw.loc['2024']
+df_previsao_arima_2024 = df_previsao_arima.loc['2024']
+df_meta_2024 = df_meta.loc['2024']
+
+# Ajustar um polinômio aos pontos previstos pelo ARIMA
+x_vals = np.arange(len(df_previsao_arima_2024))
+y_vals = df_previsao_arima_2024['previsão'].values
+p = np.polyfit(x_vals, y_vals, 3)  # Ajusta um polinômio de grau 3
+y_fit = np.polyval(p, x_vals)
+equation = f'${p[0]:.2e}x^3 + {p[1]:.2e}x^2 + {p[2]:.2e}x + {p[3]:.2e}$'
+
 # Gráfico de Holt-Winters
 plt.figure(figsize=(14, 7))
-plt.plot(df.index, df['resultado'], label='Resultado Real', marker='o')
-for x, y in zip(df.index, df['resultado']):
+plt.plot(df_2024.index, df_2024['resultado'], label='Resultado Real', marker='o')
+for x, y in zip(df_2024.index, df_2024['resultado']):
     plt.text(x, y, f'{y:.2f}', fontsize=9, ha='right')
 
-plt.plot(df_previsao_hw.index, df_previsao_hw['previsão'], label='Previsão Suavizada', linestyle='--', marker='o')
-for x, y in zip(df_previsao_hw.index, df_previsao_hw['previsão']):
+plt.plot(df_previsao_hw_2024.index, df_previsao_hw_2024['previsão'], label='Previsão Suavizada', linestyle='--', marker='o')
+for x, y in zip(df_previsao_hw_2024.index, df_previsao_hw_2024['previsão']):
     plt.text(x, y, f'{y:.2f}', fontsize=9, ha='right')
 
-plt.plot(df_meta.index, df_meta['meta'], label='Meta 2024', linestyle=':', color='red', marker='x')
-for x, y in zip(df_meta.index, df_meta['meta']):
+plt.plot(df_meta_2024.index, df_meta_2024['meta'], label='Meta 2024', linestyle=':', color='red', marker='x')
+for x, y in zip(df_meta_2024.index, df_meta_2024['meta']):
     plt.text(x, y, f'{y:.2f}', fontsize=9, ha='right')
 
-plt.fill_between(df_previsao_hw.index, df_previsao_hw['limite_superior'], df_previsao_hw['limite_inferior'], color='grey', alpha=0.2)
+plt.fill_between(df_previsao_hw_2024.index, df_previsao_hw_2024['limite_superior'], df_previsao_hw_2024['limite_inferior'], color='grey', alpha=0.2)
 
 plt.title(f'Resultados e Previsões com Suavização Tripla Aditiva e Metas\n({int(confidence_level*100)}% Intervalo de Confiança)')
 plt.xlabel('')
@@ -98,19 +111,22 @@ plt.show()
 
 # Gráfico ARIMA
 plt.figure(figsize=(14, 7))
-plt.plot(df.index, df['resultado'], label='Resultado Real', marker='o')
-for x, y in zip(df.index, df['resultado']):
+plt.plot(df_2024.index, df_2024['resultado'], label='Resultado Real', marker='o')
+for x, y in zip(df_2024.index, df_2024['resultado']):
     plt.text(x, y, f'{y:.2f}', fontsize=9, ha='right')
 
-plt.plot(df_previsao_arima.index, df_previsao_arima['previsão'], label='Previsão ARIMA', linestyle='--', marker='o')
-for x, y in zip(df_previsao_arima.index, df_previsao_arima['previsão']):
+plt.plot(df_previsao_arima_2024.index, df_previsao_arima_2024['previsão'], label='Previsão ARIMA', linestyle='--', marker='o')
+for x, y in zip(df_previsao_arima_2024.index, df_previsao_arima_2024['previsão']):
     plt.text(x, y, f'{y:.2f}', fontsize=9, ha='right')
 
-plt.plot(df_meta.index, df_meta['meta'], label='Meta 2024', linestyle=':', color='red', marker='x')
-for x, y in zip(df_meta.index, df_meta['meta']):
+plt.plot(df_meta_2024.index, df_meta_2024['meta'], label='Meta 2024', linestyle=':', color='red', marker='x')
+for x, y in zip(df_meta_2024.index, df_meta_2024['meta']):
     plt.text(x, y, f'{y:.2f}', fontsize=9, ha='right')
 
-plt.fill_between(df_previsao_arima.index, df_previsao_arima['limite_superior'], df_previsao_arima['limite_inferior'], color='grey', alpha=0.2)
+plt.fill_between(df_previsao_arima_2024.index, df_previsao_arima_2024['limite_superior'], df_previsao_arima_2024['limite_inferior'], color='grey', alpha=0.2)
+
+# Plotar a linha de ajuste polinomial
+plt.plot(df_previsao_arima_2024.index, y_fit, label=f'Ajuste Polinomial: {equation}', linestyle='-', color='blue')
 
 plt.title(f'Previsões com ARIMA e Limites de Confiança\n({int(confidence_level*100)}% Intervalo de Confiança)')
 plt.xlabel('')
@@ -122,7 +138,7 @@ plt.show()
 # Exportar para CSV
 df_complete_hw = pd.concat([df, df_previsao_hw], axis=0)
 df_complete_hw['meta'] = df_meta['meta']
-df_complete_hw.to_csv('resultados_previsoes_hw.csv', decimal=',')
+df_complete_hw.to_csv('resultados_HW_aditivada.csv', decimal=',')
 
 df_complete_arima = pd.concat([df, df_previsao_arima], axis=0)
 df_complete_arima['meta'] = df_meta['meta']
